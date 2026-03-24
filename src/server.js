@@ -46,9 +46,24 @@ app.use(verificaDiaSemana);
 app.use(registraLog);
 
 
-// ROTAS PÚBLICAS
+// ==========================================
+// ROTAS PÚBLICAS (Sem Token)
+// ==========================================
 
-// RESOLUÇÃO DO REQUISITO A: Rota POST '/logar' que devolve um token válido 
+// Rota principal: Quando acessar o link raiz, mostra a tela inicial
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/main-page.html');
+});
+
+// Liberando o acesso para os arquivos visuais do site (Passe Livre)
+app.get('/main-page.html', (req, res) => res.sendFile(__dirname + '/main-page.html'));
+app.get('/sign-up.html', (req, res) => res.sendFile(__dirname + '/sign-up.html'));
+app.get('/adm.html', (req, res) => res.sendFile(__dirname + '/adm.html'));
+app.get('/styles.css', (req, res) => res.sendFile(__dirname + '/styles.css'));
+app.get('/script.js', (req, res) => res.sendFile(__dirname + '/script.js'));
+app.get('/view.js', (req, res) => res.sendFile(__dirname + '/view.js'));
+
+// Login (Requisito A)
 app.post('/logar', (req, res) => {
     const { email, senha } = req.body;
     if (email === "admin@email.com" && senha === "123456") {
@@ -58,7 +73,7 @@ app.post('/logar', (req, res) => {
     res.status(401).json({ erro: "Email ou senha inválidos" });
 });
 
-// RESOLUÇÃO DO REQUISITO C: Rota POST para inserir um novo item 
+// Cadastro (Requisito C)
 app.post('/itens', (req, res) => {
     const novoItem = req.body;
     novoItem.id = cadastros.length ? cadastros[cadastros.length - 1].id + 1 : 1;
@@ -135,10 +150,6 @@ app.get('/relatorio/pdf', (req, res) => {
     doc.end();
 });
 
-// Rota para levar à tela inicial
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/main-page.html');
-});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
