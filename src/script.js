@@ -1,47 +1,48 @@
-function createRegister(name, birth, phone, email) {
-    return {
-        name: name,
-        birth: birth,
-        phone: phone,
-        email: email
-    };
-}
-
-function register() {
+// Criação de novos cadastros com a API
+async function register() {
     const name = document.getElementById("full-name").value.trim();
     const birth = document.getElementById("date-of-birth").value.trim();
     const phone = document.getElementById("phone-number").value.trim();
     const email = document.getElementById("email").value.trim();
 
     if (!name || !birth || !phone || !email) {
-        alert("Por favor, preencha todos os campos corretamente.")
+        alert("Por favor, preencha todos os campos corretamente.");
         return;
     }
 
-    const newRegister = createRegister(name, birth, phone, email);
+    const newRegister = { name, birth, phone, email };
 
-    let list = JSON.parse(localStorage.getItem("registers")) || [];
+    try {
+        // Envia o cadastro diretamente para a rota pública com uma URL relativa
+        const res = await fetch('/itens', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newRegister)
+        });
 
-    list.push(newRegister);
-
-    localStorage.setItem("registers", JSON.stringify(list));
-
-    document.getElementById("full-name").value = "";
-    document.getElementById("date-of-birth").value = "";
-    document.getElementById("phone-number").value = "";
-    document.getElementById("email").value = "";
-
-    alert("Cadastro concluído")
+        if (res.ok) {
+            alert("Cadastro concluído com sucesso!");
+            // Limpa os campos
+            document.getElementById("full-name").value = "";
+            document.getElementById("date-of-birth").value = "";
+            document.getElementById("phone-number").value = "";
+            document.getElementById("email").value = "";
+        } else {
+            alert("Erro ao realizar o cadastro.");
+        }
+    } catch (error) {
+        console.error("Erro na requisição:", error);
+        alert("Erro ao conectar com o servidor da API.");
+    }
 }
 
+// Formatação dos campos
 const nameInput = document.getElementById("full-name");
-
 nameInput.addEventListener("input", (e) => {
     e.target.value = e.target.value.replace(/\d/g, "");
 });
 
 const birthInput = document.getElementById("date-of-birth");
-
 birthInput.addEventListener("input", (e) => {
     let value = e.target.value.replace(/\D/g, "");
     if (value.length > 2 && value.length <= 4) {
@@ -53,14 +54,10 @@ birthInput.addEventListener("input", (e) => {
 });
 
 const phoneInput = document.getElementById("phone-number");
-
 phoneInput.addEventListener("input", (e) => {
     let value = e.target.value.replace(/\D/g, "");
-
-    if (value.length > 11) {
-        value = value.slice(0, 11);
-    }
-
+    if (value.length > 11) value = value.slice(0, 11);
+    
     if (value.length > 6) {
         value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
     } else if (value.length > 2) {
@@ -68,6 +65,5 @@ phoneInput.addEventListener("input", (e) => {
     } else if (value.length > 0) {
         value = `(${value}`;
     }
-
     e.target.value = value;
 });
