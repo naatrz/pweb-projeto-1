@@ -134,7 +134,7 @@ app.get('/relatorio/pdf', (req, res) => {
     res.setHeader('Content-disposition', 'attachment; filename=lista_cadastros.pdf');
     res.setHeader('Content-type', 'application/pdf');
     doc.pipe(res);
-    doc.fontSize(20).text('Relatório de Cadastros - Sprint 1', { align: 'center' });
+    doc.fontSize(20).text('Relatório de Cadastros', { align: 'center' });
     doc.moveDown();
     if (cadastros.length === 0) doc.fontSize(12).text('Nenhum cadastro encontrado no sistema.');
     else {

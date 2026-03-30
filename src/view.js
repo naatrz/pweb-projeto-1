@@ -81,4 +81,38 @@ async function deleteRegister(id) {
     }
 }
 
+// Download de PDF
+async function downloadPDF() {
+    try {
+        const token = await fetchToken();
+        const res = await fetch('/relatorio/pdf', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+            throw new Error("Falha ao buscar o PDF");
+        }
+
+        // Transforma a resposta binária em um arquivo (Blob)
+        const blob = await res.blob();
+        
+        // Cria um link temporário na memória do navegador
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'lista_cadastros.pdf'; // O nome do arquivo que vai baixar
+        
+        // Simula o clique para iniciar o download e depois limpa o link
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao tentar gerar e baixar o relatório em PDF.");
+    }
+}
+
 window.onload = showRegisters;
