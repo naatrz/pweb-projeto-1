@@ -25,7 +25,7 @@ let registrosAcesso = [];
 const verificaDiaSemana = (req, res, next) => {
     const dataAtual = new Date();
     const diaDaSemana = dataAtual.getDay(); 
-    if (diaDaSemana === 0 || diaDaSemana === 6) {
+    if (diaDaSemana === 3 || diaDaSemana === 4) {   // Voltar para diaDaSemana === 0 || diaDaSemana === 6
         return res.status(403).json({ erro: "Acesso negado. A API só funciona de segunda a sexta-feira." });
     }
     next();
@@ -56,6 +56,7 @@ app.get('/', (req, res) => {
 });
 
 // Liberando o acesso para os arquivos visuais do site (Passe Livre)
+app.get('/login.html', (req, res) => res.sendFile(__dirname + '/login.html'));
 app.get('/main-page.html', (req, res) => res.sendFile(__dirname + '/main-page.html'));
 app.get('/sign-up.html', (req, res) => res.sendFile(__dirname + '/sign-up.html'));
 app.get('/adm.html', (req, res) => res.sendFile(__dirname + '/adm.html'));

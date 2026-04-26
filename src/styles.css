@@ -16,6 +16,7 @@ p {
 
 .home-page-container,
 .sign-up-container,
+.login-container,
 .adm-container {
     max-width: 600px;
     width: 100%;

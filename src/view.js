@@ -1,12 +1,14 @@
-// Função auxiliar para pegar o token escondido nos bastidores
-async function fetchToken() {
-    const loginRes = await fetch('/logar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: "admin@email.com", senha: "123456" })
-    });
-    const data = await loginRes.json();
-    return data.token;
+// Captura de token
+function fetchToken() {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        alert("Você precisa estar logado para acessar esta área.");
+        window.location.href = 'login.html';
+        return null;
+    }
+    
+    return token;
 }
 
 // Busca e exibe os registros da API

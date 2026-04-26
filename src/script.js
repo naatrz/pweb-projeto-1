@@ -1,3 +1,30 @@
+// Login de ADM
+async function login() {
+    const email = document.getElementById("login-email").value;
+    const senha = document.getElementById("senha").value;
+
+    try {
+        const res = await fetch('/logar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, senha })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            // Guarda o token no localStorage para usar depois
+            localStorage.setItem('token', data.token);
+            window.location.href = 'adm.html';
+        } else {
+            alert(data.erro || "Usuário ou senha incorretos.");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao conectar com o servidor.");
+    }
+}
+
 // Criação de novos cadastros com a API
 async function register() {
     const name = document.getElementById("full-name").value.trim();
