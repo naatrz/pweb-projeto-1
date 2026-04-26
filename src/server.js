@@ -1,3 +1,7 @@
+const mongoose = require('mongoose');
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log("Conectado ao MongoDB"));
+
 const cors = require('cors');
 const express = require('express');
 const jwt = require('jsonwebtoken');
