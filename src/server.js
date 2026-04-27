@@ -115,7 +115,7 @@ const verificaToken = (req, res, next) => {
 app.use(verificaToken);
 
 // ==========================================
-// ROTAS PROTEGIDAS (Agora buscam do MongoDB)
+// ROTAS PROTEGIDAS (MongoDB)
 // ==========================================
 
 // Listar itens
@@ -138,6 +138,26 @@ app.get('/itens/:id', async (req, res) => {
         else res.status(404).json({ erro: "Item não encontrado" });
     } catch (error) {
         res.status(400).json({ erro: "ID inválido." });
+    }
+});
+
+// REQUISITO C (N2B): Rota PUT para atualizar um cadastro e seus dados no BD
+app.put('/itens/:id', async (req, res) => {
+    try {
+        // O { new: true } serve para o Mongoose devolver o registro JÁ com os dados novos
+        const itemAtualizado = await User.findByIdAndUpdate(
+            req.params.id, 
+            req.body, 
+            { new: true, runValidators: true }
+        );
+        
+        if (itemAtualizado) {
+            res.json({ mensagem: "Cadastro atualizado com sucesso!", item: itemAtualizado });
+        } else {
+            res.status(404).json({ erro: "Item não encontrado para atualização" });
+        }
+    } catch (error) {
+        res.status(400).json({ erro: "Erro ao atualizar. Verifique se o ID ou os dados estão corretos.", detalhes: error.message });
     }
 });
 

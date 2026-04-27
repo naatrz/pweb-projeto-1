@@ -24,14 +24,10 @@ async function showRegisters() {
         });
         
         const registers = await res.json();
-        listContainer.innerHTML = ""; // Limpa a mensagem
+        listContainer.innerHTML = ""; 
 
         if (registers.length === 0) {
-            const msg = document.createElement("p");
-            msg.textContent = "Nenhum cadastro encontrado na API.";
-            msg.style.fontStyle = "italic";
-            msg.style.color = "#555";
-            listContainer.appendChild(msg);
+            listContainer.innerHTML = "<p style='font-style: italic; color: #555;'>Nenhum cadastro encontrado.</p>";
             return;
         }
 
@@ -39,25 +35,69 @@ async function showRegisters() {
             const div = document.createElement("div");
             div.classList.add("register");
 
+            // Adicionado o botão "Editar" ao lado do "Deletar"
             div.innerHTML = `
                 <p><strong>ID:</strong> ${register.id}</p>
                 <p><strong>Nome:</strong> ${register.name}</p>
                 <p><strong>Nascimento:</strong> ${register.birth}</p>
                 <p><strong>Telefone:</strong> ${register.phone}</p>
                 <p><strong>Email:</strong> ${register.email}</p>
-                <button onclick="deleteRegister(${register.id})">Deletar</button>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="editRegister('${register.id}', '${register.name}', '${register.email}', '${register.phone}', '${register.birth}')" style="background-color: #6a5acd;">Editar</button>
+                    <button onclick="deleteRegister('${register.id}')" style="background-color: #cf222e;">Deletar</button>
+                </div>
             `;
 
             listContainer.appendChild(div);
 
             if (index < registers.length - 1) {
-                const hr = document.createElement("hr");
-                listContainer.appendChild(hr);
+                listContainer.appendChild(document.createElement("hr"));
             }
         });
     } catch (error) {
         console.error(error);
-        listContainer.innerHTML = "<p style='color: red;'>Erro ao carregar dados do servidor. Verifique se a API está rodando.</p>";
+        listContainer.innerHTML = "<p style='color: red;'>Erro ao carrergar dados do MongoDB.</p>";
+    }
+}
+
+// RESOLUÇÃO DO REQUISITO C (N2B): Função para editar um registro no banco
+async function editRegister(id, oldName, oldEmail, oldPhone, oldBirth) {
+    // Usando prompt para simplificar a entrada de dados na apresentação
+    const newName = prompt("Novo nome:", oldName);
+    const newEmail = prompt("Novo e-mail:", oldEmail);
+    const newPhone = prompt("Novo telefone:", oldPhone);
+    const newBirth = prompt("Nova data de nascimento:", oldBirth);
+
+    if (!newName || !newEmail) return; // Cancela se campos básicos estiverem vazios
+
+    const updatedData = {
+        name: newName,
+        email: newEmail,
+        phone: newPhone,
+        birth: newBirth
+    };
+
+    try {
+        const token = await fetchToken();
+        const res = await fetch(`/itens/${id}`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify(updatedData)
+        });
+
+        if (res.ok) {
+            alert("Cadastro atualizado no MongoDB com sucesso!");
+            showRegisters(); // Recarrega a lista atualizada
+        } else {
+            const err = await res.json();
+            alert("Erro ao editar: " + err.erro);
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao conectar com o servidor para editar.");
     }
 }
 
