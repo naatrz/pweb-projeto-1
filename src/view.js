@@ -35,14 +35,18 @@ async function showRegisters() {
             const div = document.createElement("div");
             div.classList.add("register");
 
-            // Adicionado o botão "Editar" ao lado do "Deletar"
+            let imagemHtml = register.fotoUrl 
+                ? `<img src="${register.fotoUrl}" alt="Foto de Perfil" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;">` 
+                : `<p style="color: #888; font-style: italic;">Sem foto de perfil</p>`;
+
             div.innerHTML = `
+                ${imagemHtml}
                 <p><strong>ID:</strong> ${register.id}</p>
                 <p><strong>Nome:</strong> ${register.name}</p>
                 <p><strong>Nascimento:</strong> ${register.birth}</p>
                 <p><strong>Telefone:</strong> ${register.phone}</p>
                 <p><strong>Email:</strong> ${register.email}</p>
-                <div style="display: flex; gap: 10px;">
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <button onclick="editRegister('${register.id}', '${register.name}', '${register.email}', '${register.phone}', '${register.birth}')" style="background-color: #6a5acd;">Editar</button>
                     <button onclick="deleteRegister('${register.id}')" style="background-color: #cf222e;">Deletar</button>
                 </div>

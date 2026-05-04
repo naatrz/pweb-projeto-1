@@ -39,6 +39,27 @@ async function register() {
         return;
     }
 
+    let fotoUrl = ""; // Começa vazia
+    const fotoInput = document.getElementById("foto").files[0];
+
+    // Se o usuário escolheu uma foto, envia para o Cloudinary primeiro
+    if (fotoInput) {
+        const formData = new FormData();
+        formData.append("imagem", fotoInput);
+
+        try {
+            const resFoto = await fetch('/upload', {
+                method: 'POST',
+                body: formData // Não precisa de Content-Type nem de Token aqui
+            });
+            const dataFoto = await resFoto.json();
+            if (resFoto.ok) fotoUrl = dataFoto.url; // Pega a URL pública
+        } catch (error) {
+            alert("Erro ao enviar a imagem.");
+            return;
+        }
+    }
+
     // Agora inclui o password no objeto que vai para a API
     const newRegister = { name, birth, phone, email, password };
 

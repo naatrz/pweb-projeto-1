@@ -159,6 +159,20 @@ app.post('/itens', async (req, res) => {
     }
 });
 
+// RESOLUÇÃO DO REQUISITO B (N2B): Salvar imagem em nuvem auxiliar
+app.post('/upload', upload.single('imagem'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ erro: "Nenhuma imagem foi enviada." });
+    }
+    
+    // O Multer e o Cloudinary processam o arquivo e injetam o link público em req.file.path
+    res.json({ 
+        mensagem: "Imagem salva na nuvem com sucesso!", 
+        url: req.file.path 
+    });
+});
+
+
 // ==========================================
 // MIDDLEWARE DE PROTEÇÃO (Token)
 // ==========================================
@@ -269,19 +283,6 @@ app.get('/relatorio/pdf', async (req, res) => {
     } catch (error) {
         res.status(500).json({ erro: "Erro ao gerar PDF do banco de dados." });
     }
-});
-
-// RESOLUÇÃO DO REQUISITO B (N2B): Salvar imagem em nuvem auxiliar
-app.post('/upload', upload.single('imagem'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ erro: "Nenhuma imagem foi enviada." });
-    }
-    
-    // O Multer e o Cloudinary processam o arquivo e injetam o link público em req.file.path
-    res.json({ 
-        mensagem: "Imagem salva na nuvem com sucesso!", 
-        url: req.file.path 
-    });
 });
 
 const PORT = process.env.PORT || 3000;
