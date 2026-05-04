@@ -6,6 +6,7 @@ const cors = require('cors');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const PDFDocument = require('pdfkit');
+const bcrypt = require('bcrypt');
 
 const app = express();
 
@@ -41,12 +42,11 @@ let registrosAcesso = [];
 // MIDDLEWARES DE CONTROLE
 // ==========================================
 const verificaDiaSemana = (req, res, next) => {
-    // Comentado para você conseguir testar hoje no final de semana!
-    // const dataAtual = new Date();
-    // const diaDaSemana = dataAtual.getDay(); 
-    // if (diaDaSemana === 0 || diaDaSemana === 6) {
-    //     return res.status(403).json({ erro: "Acesso negado. A API só funciona de segunda a sexta-feira." });
-    // }
+    const dataAtual = new Date();
+    const diaDaSemana = dataAtual.getDay(); 
+    if (diaDaSemana === 0 || diaDaSemana === 6) {
+        return res.status(403).json({ erro: "Acesso negado. A API só funciona de segunda a sexta-feira." });
+    }
     next();
 };
 
@@ -75,20 +75,45 @@ app.get('/styles.css', (req, res) => res.sendFile(__dirname + '/styles.css'));
 app.get('/script.js', (req, res) => res.sendFile(__dirname + '/script.js'));
 app.get('/view.js', (req, res) => res.sendFile(__dirname + '/view.js'));
 
-// Login (Mantido fixo por enquanto até fazermos a criptografia do Requisito F)
-app.post('/logar', (req, res) => {
+// Login Criptografado (Requisito A da N1 e Requisito F da N2)
+app.post('/logar', async (req, res) => {
     const { email, senha } = req.body;
-    if (email === "admin@email.com" && senha === "123456") {
-        const token = jwt.sign({ usuarioId: 1, email: email }, SECRET_KEY, { expiresIn: '1h' });
+    
+    try {
+        // 1. Procura o usuário no banco pelo email
+        const usuario = await User.findOne({ email });
+        
+        // 2. Se não achar ou se a senha não bater (usando o bcrypt para comparar)
+        if (!usuario || !(await bcrypt.compare(senha, usuario.password))) {
+            return res.status(401).json({ erro: "Email ou senha inválidos." });
+        }
+        
+        // 3. Se tudo deu certo, gera o token (agora com o ID real do banco)
+        const token = jwt.sign({ usuarioId: usuario._id, email: usuario.email }, SECRET_KEY, { expiresIn: '1h' });
         return res.json({ mensagem: "Login realizado com sucesso", token: token });
+        
+    } catch (error) {
+        res.status(500).json({ erro: "Erro ao tentar realizar o login." });
     }
-    res.status(401).json({ erro: "Email ou senha inválidos" });
 });
 
-// Cadastro (Agora salva no MongoDB)
+// Cadastro (Requisito C da N1 e Requisito F da N2)
 app.post('/itens', async (req, res) => {
     try {
-        const novoUser = new User(req.body);
+        // Verifica se veio senha, senão define uma padrão só por segurança
+        const senhaOriginal = req.body.password || "123456"; 
+        
+        // Criptografa a senha antes de salvar (Custo 10 é o padrão seguro)
+        const senhaCriptografada = await bcrypt.hash(senhaOriginal, 10);
+        
+        const novoUser = new User({
+            name: req.body.name,
+            birth: req.body.birth,
+            phone: req.body.phone,
+            email: req.body.email,
+            password: senhaCriptografada // Salva o hash no lugar da senha limpa
+        });
+        
         await novoUser.save();
         res.status(201).json({ mensagem: "Item cadastrado com sucesso no banco!", item: novoUser });
     } catch (error) {
@@ -178,7 +203,7 @@ app.get('/logs/:data', (req, res) => {
     res.json(registrosAcesso.filter(log => log.data === dataBuscada));
 });
 
-// Gerar PDF (Agora busca os dados do MongoDB)
+// Gerar PDF
 app.get('/relatorio/pdf', async (req, res) => {
     try {
         const users = await User.find();
