@@ -23,8 +23,9 @@ const dominiosPermitidos = [
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Permite requisições sem origin (como as feitas pelo próprio servidor) ou as que estão na lista permitida
-        if (!origin || dominiosPermitidos.includes(origin)) {
+        // Libera se não tiver origin (ferramentas locais), se estiver na lista exata, 
+        // OU se for qualquer link gerado pela Vercel (Preview URLs)
+        if (!origin || dominiosPermitidos.includes(origin) || origin.endsWith('.vercel.app')) {
             callback(null, true);
         } else {
             callback(new Error('Acesso negado pela política de CORS do servidor.'));
