@@ -11,7 +11,23 @@ const bcrypt = require('bcrypt');
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+
+// RESOLUÇÃO DO REQUISITO G (N2B): Configurar o CORS
+const dominiosPermitidos = [
+    'https://pweb-projeto-1.vercel.app', 
+    'http://localhost:3000'
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Permite requisições sem origin (como as feitas pelo próprio servidor) ou as que estão na lista permitida
+        if (!origin || dominiosPermitidos.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Acesso negado pela política de CORS do servidor.'));
+        }
+    }
+}));
 
 // Permite que o servidor do Vercel mostre os arquivos html, css e js
 app.use(express.static(__dirname)); 
