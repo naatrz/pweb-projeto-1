@@ -31,16 +31,18 @@ async function register() {
     const birth = document.getElementById("date-of-birth").value.trim();
     const phone = document.getElementById("phone-number").value.trim();
     const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim(); // Pega a senha digitada
 
-    if (!name || !birth || !phone || !email) {
+    // Verifica se a senha também foi preenchida
+    if (!name || !birth || !phone || !email || !password) {
         alert("Por favor, preencha todos os campos corretamente.");
         return;
     }
 
-    const newRegister = { name, birth, phone, email };
+    // Agora inclui o password no objeto que vai para a API
+    const newRegister = { name, birth, phone, email, password };
 
     try {
-        // Envia o cadastro diretamente para a rota pública com uma URL relativa
         const res = await fetch('/itens', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -49,13 +51,19 @@ async function register() {
 
         if (res.ok) {
             alert("Cadastro concluído com sucesso!");
-            // Limpa os campos
+            
+            // Limpa todos os campos, incluindo a senha
             document.getElementById("full-name").value = "";
             document.getElementById("date-of-birth").value = "";
             document.getElementById("phone-number").value = "";
             document.getElementById("email").value = "";
+            document.getElementById("password").value = "";
+            
+            // Redireciona para o login após o sucesso
+            window.location.href = 'login.html';
         } else {
-            alert("Erro ao realizar o cadastro.");
+            const data = await res.json();
+            alert("Erro ao realizar o cadastro: " + (data.erro || "Verifique os dados."));
         }
     } catch (error) {
         console.error("Erro na requisição:", error);
