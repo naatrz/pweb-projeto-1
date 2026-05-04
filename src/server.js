@@ -7,6 +7,9 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const PDFDocument = require('pdfkit');
 const bcrypt = require('bcrypt');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const app = express();
 
@@ -47,12 +50,30 @@ const UserSchema = new mongoose.Schema({
     birth: { type: String, required: true },
     phone: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String } // Já preparado para o Requisito F (Criptografia)
+    password: { type: String },
+    fotoUrl: { type: String }
 });
 
 const User = mongoose.model('User', UserSchema);
 
 let registrosAcesso = [];
+
+// Configuração da Nuvem de Imagens
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'pweb_usuarios', // Nome da pasta que será criada na nuvem
+        allowed_formats: ['jpg', 'png', 'jpeg']
+    }
+});
+
+const upload = multer({ storage: storage });
 
 // ==========================================
 // MIDDLEWARES DE CONTROLE
@@ -247,6 +268,19 @@ app.get('/relatorio/pdf', async (req, res) => {
     } catch (error) {
         res.status(500).json({ erro: "Erro ao gerar PDF do banco de dados." });
     }
+});
+
+// RESOLUÇÃO DO REQUISITO B (N2B): Salvar imagem em nuvem auxiliar
+app.post('/upload', upload.single('imagem'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ erro: "Nenhuma imagem foi enviada." });
+    }
+    
+    // O Multer e o Cloudinary processam o arquivo e injetam o link público em req.file.path
+    res.json({ 
+        mensagem: "Imagem salva na nuvem com sucesso!", 
+        url: req.file.path 
+    });
 });
 
 const PORT = process.env.PORT || 3000;
