@@ -115,7 +115,10 @@ async function showRegisters() {
     }
 }
 
-// RESOLUÇÃO DO REQUISITO C (N2B): Função para editar um registro no banco
+// ==========================================
+// RESOLUÇÃO DO REQUISITO C (N1B): Função para editar um registro no banco
+// ==========================================
+
 async function editRegister(id, oldName, oldEmail, oldPhone, oldBirth) {
     // Usando prompt para simplificar a entrada de dados na apresentação
     const newName = prompt("Novo nome:", oldName);

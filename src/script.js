@@ -1,7 +1,11 @@
-// Função para o login
-let emailTentandoLogar = ""; // Guarda o e-mail temporariamente para o passo 2
+// ==========================================
+// REQUISITO H (N1B) - Autenticação de Dois Fatores (2FA):
+// ==========================================
 
-// Envia senha e pede o código
+// Função para o login
+let emailTentandoLogar = ""; // Guarda o e-mail temporariamente para o passo da autenticação
+
+// Envia senha e pede o código da 2FA
 async function iniciarLogin() {
     const email = document.getElementById("login-email").value;
     const senha = document.getElementById("senha").value;
@@ -60,21 +64,25 @@ async function confirmarLogin() {
     }
 }
 
+// ==========================================
+// REQUISITO A e B (N1B) - Banco de Dados em Nuvem:
+// ==========================================
+
 // Criação de novos cadastros com a API
 async function register() {
-    const name = document.getElementById("full-name").value.trim();
-    const birth = document.getElementById("date-of-birth").value.trim();
-    const phone = document.getElementById("phone-number").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim(); // Pega a senha digitada
+    const name = document.getElementById("full-name").value.trim();      //
+    const birth = document.getElementById("date-of-birth").value.trim(); //
+    const phone = document.getElementById("phone-number").value.trim();  // Armazena os dados de todos os campos
+    const email = document.getElementById("email").value.trim();         //
+    const password = document.getElementById("password").value.trim();   //
 
-    // Verifica se a senha também foi preenchida
+    // Verifica se os campos foram preenchidos
     if (!name || !birth || !phone || !email || !password) {
         alert("Por favor, preencha todos os campos corretamente.");
         return;
     }
 
-    let fotoUrl = ""; // Começa vazia
+    let fotoUrl = ""; // A foto fica vazia, pois não é obrigatória
     const fotoInput = document.getElementById("foto").files[0];
 
     // Se o usuário escolheu uma foto, envia para o Cloudinary primeiro
@@ -85,17 +93,17 @@ async function register() {
         try {
             const resFoto = await fetch('/upload', {
                 method: 'POST',
-                body: formData // Não precisa de Content-Type nem de Token aqui
+                body: formData // Não é necessário Content-Type ou Token
             });
             const dataFoto = await resFoto.json();
-            if (resFoto.ok) fotoUrl = dataFoto.url; // Pega a URL pública
+            if (resFoto.ok) fotoUrl = dataFoto.url; // Pega a URL pública gerada pelo Cloudinary
         } catch (error) {
             alert("Erro ao enviar a imagem.");
             return;
         }
     }
 
-    // Agora inclui o password no objeto que vai para a API
+    // Inclui o que será enviado para a API
     const newRegister = { name, birth, phone, email, password, fotoUrl };
 
     try {

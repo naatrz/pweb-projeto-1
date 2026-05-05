@@ -25,7 +25,10 @@ const transporter = nodemailer.createTransport({
 
 app.use(express.json());
 
-// RESOLUÇÃO DO REQUISITO G (N2B): Configurar o CORS
+// ==========================================
+// RESOLUÇÃO DO REQUISITO G (N1B) - Política de CORS:
+// ==========================================
+
 const dominiosPermitidos = [
     'https://pweb-projeto-1.vercel.app', 
     'http://localhost:3000'
@@ -49,8 +52,9 @@ app.use(express.static(__dirname));
 const SECRET_KEY = process.env.SECRET_KEY || "exemplo_de_key";
 
 // ==========================================
-//  RESOLUÇÃO DO REQUISITO A (N2B): Conexão com MongoDB em nuvem
+//  RESOLUÇÃO DO REQUISITO A (N1B) - Conexão com MongoDB em nuvem:
 // ==========================================
+
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("Conectado ao MongoDB com sucesso!"))
     .catch((err) => console.error("Erro ao conectar ao MongoDB:", err));
@@ -127,6 +131,10 @@ app.get('/styles.css', (req, res) => res.sendFile(__dirname + '/styles.css'));
 app.get('/script.js', (req, res) => res.sendFile(__dirname + '/script.js'));
 app.get('/view.js', (req, res) => res.sendFile(__dirname + '/view.js'));
 
+// ==========================================
+// REQUISITO F (N1B) - Criptografia de senhas:
+// ==========================================
+
 // ETAPA 1 do Login: Verifica a senha e dispara o e-mail
 app.post('/logar', async (req, res) => {
     const { email, senha } = req.body;
@@ -162,7 +170,7 @@ app.post('/logar', async (req, res) => {
     }
 });
 
-// ETAPA 2 do Login (Requisito H da N2): Verifica o código e entrega o Token
+// ETAPA 2 do Login (Requisito H N1B): Verifica o código e entrega o Token
 app.post('/verificar-2fa', async (req, res) => {
     const { email, codigo } = req.body;
     try {
@@ -187,13 +195,13 @@ app.post('/verificar-2fa', async (req, res) => {
     }
 });
 
-// Cadastro (Requisito C da N1 e Requisito F da N2)
+// Cadastro (Requisito C da N1A e Requisito F da N1B)
 app.post('/itens', async (req, res) => {
     try {
-        // Verifica se veio senha, senão define uma padrão só por segurança
+        // Verifica se veio senha, senão define uma padrão por segurança
         const senhaOriginal = req.body.password || "123456"; 
         
-        // Criptografa a senha antes de salvar (Custo 10 é o padrão seguro)
+        // Criptografa a senha antes de salvar com custo 10
         const senhaCriptografada = await bcrypt.hash(senhaOriginal, 10);
         
         const novoUser = new User({
@@ -202,7 +210,7 @@ app.post('/itens', async (req, res) => {
             phone: req.body.phone,
             email: req.body.email,
             password: senhaCriptografada,
-            fotoUrl: req.body.fotoUrl // ⬅️ AQUI ESTAVA O PROBLEMA! Faltava essa linha para salvar a foto no banco!
+            fotoUrl: req.body.fotoUrl
         });
         
         await novoUser.save();
@@ -212,7 +220,10 @@ app.post('/itens', async (req, res) => {
     }
 });
 
-// RESOLUÇÃO DO REQUISITO B (N2B): Salvar imagem em nuvem auxiliar
+// ==========================================
+// RESOLUÇÃO DO REQUISITO B (N1B): Salvar imagem em nuvem auxiliar
+// ==========================================
+
 app.post('/upload', (req, res) => {
     // Colocamos o upload dentro de uma função para capturar qualquer erro
     upload.single('imagem')(req, res, function (err) {
@@ -297,7 +308,10 @@ app.get('/itens/:id', async (req, res) => {
     }
 });
 
-// REQUISITO C (N2B): Rota PUT para atualizar um cadastro e seus dados no BD
+// ==========================================
+// REQUISITO C (N1B): Edição de Registros
+// ==========================================
+
 app.put('/itens/:id', async (req, res) => {
     try {
         // O { new: true } serve para o Mongoose devolver o registro JÁ com os dados novos
