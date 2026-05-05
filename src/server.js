@@ -10,8 +10,18 @@ const bcrypt = require('bcrypt');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const nodemailer = require('nodemailer');
 
 const app = express();
+
+// Configuração do disparador de e-mails
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
 app.use(express.json());
 
@@ -53,7 +63,9 @@ const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String },
     fotoUrl: { type: String },
-    role: { type: String, default: 'user' }
+    role: { type: String, default: 'user' },
+    twoFactorCode: { type: String },
+    twoFactorExpires: { type: Date }
 });
 
 const User = mongoose.model('User', UserSchema);
@@ -115,10 +127,9 @@ app.get('/styles.css', (req, res) => res.sendFile(__dirname + '/styles.css'));
 app.get('/script.js', (req, res) => res.sendFile(__dirname + '/script.js'));
 app.get('/view.js', (req, res) => res.sendFile(__dirname + '/view.js'));
 
-// Login Criptografado (Requisito A da N1 e Requisito F da N2)
+// ETAPA 1 do Login: Verifica a senha e dispara o e-mail
 app.post('/logar', async (req, res) => {
     const { email, senha } = req.body;
-    
     try {
         const usuario = await User.findOne({ email });
         
@@ -126,13 +137,53 @@ app.post('/logar', async (req, res) => {
             return res.status(401).json({ erro: "Email ou senha inválidos." });
         }
         
-        // Guarda o 'role' para diferenciar o tipo de usuário
-        const token = jwt.sign({ usuarioId: usuario._id, email: usuario.email, role: usuario.role }, SECRET_KEY, { expiresIn: '1h' });
+        // Gera um código de 6 dígitos aleatório
+        const codigo2FA = Math.floor(100000 + Math.random() * 900000).toString(); 
         
-        return res.json({ mensagem: "Login realizado com sucesso", token: token, role: usuario.role });
+        // Salva no banco com validade de 10 minutos
+        usuario.twoFactorCode = codigo2FA;
+        usuario.twoFactorExpires = Date.now() + 10 * 60 * 1000; 
+        await usuario.save();
+
+        // Envia o e-mail
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: usuario.email,
+            subject: 'Seu Código de Segurança - API',
+            text: `Seu código de verificação é: ${codigo2FA}\nEle expira em 10 minutos.`
+        };
+        await transporter.sendMail(mailOptions);
+        
+        return res.json({ mensagem: "Código enviado para o e-mail.", require2FA: true, email: usuario.email });
         
     } catch (error) {
-        res.status(500).json({ erro: "Erro ao tentar realizar o login." });
+        console.error(error);
+        res.status(500).json({ erro: "Erro ao processar o login." });
+    }
+});
+
+// ETAPA 2 do Login (Requisito H da N2): Verifica o código e entrega o Token
+app.post('/verificar-2fa', async (req, res) => {
+    const { email, codigo } = req.body;
+    try {
+        const usuario = await User.findOne({ email });
+
+        // Se não achar o usuário, o código estiver errado, ou o tempo tiver expirado
+        if (!usuario || usuario.twoFactorCode !== codigo || usuario.twoFactorExpires < Date.now()) {
+            return res.status(401).json({ erro: "Código inválido ou expirado." });
+        }
+
+        // Se o código estiver certo, limpa ele do banco por segurança
+        usuario.twoFactorCode = undefined;
+        usuario.twoFactorExpires = undefined;
+        await usuario.save();
+
+        // Libera o Token e redireciona o usuário
+        const token = jwt.sign({ usuarioId: usuario._id, email: usuario.email, role: usuario.role }, SECRET_KEY, { expiresIn: '1h' });
+        
+        return res.json({ mensagem: "Login confirmado com sucesso", token: token, role: usuario.role });
+    } catch (error) {
+        res.status(500).json({ erro: "Erro ao verificar o código." });
     }
 });
 

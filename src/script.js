@@ -1,5 +1,8 @@
-// Login de ADM
-async function login() {
+// Função para o login
+let emailTentandoLogar = ""; // Guarda o e-mail temporariamente para o passo 2
+
+// Envia senha e pede o código
+async function iniciarLogin() {
     const email = document.getElementById("login-email").value;
     const senha = document.getElementById("senha").value;
 
@@ -11,18 +14,49 @@ async function login() {
         });
 
         const data = await res.json();
-        alert("Login com sucesso!");
         
-        localStorage.setItem("token", data.token);
-
-        if (data.role === 'admin') {
-            window.location.href = 'adm.html'; // Vai para o painel de controle
+        if (res.ok && data.require2FA) {
+            emailTentandoLogar = email; // Guarda o e-mail
+            // Esconde a div de senha e mostra a div de código
+            document.getElementById("step-1").style.display = "none";
+            document.getElementById("step-2").style.display = "block";
+            alert("Senha correta! Verifique seu e-mail.");
         } else {
-            window.location.href = 'user-profile.html'; // Vai para a tela comum (ou perfil.html se você criar)
+            alert(data.erro || "Erro ao tentar realizar o login.");
         }
     } catch (error) {
-        console.error(error);
         alert("Erro ao conectar com o servidor.");
+    }
+}
+
+// Envia o código e pega o Token real
+async function confirmarLogin() {
+    const codigo = document.getElementById("codigo-2fa").value;
+
+    try {
+        const res = await fetch('/verificar-2fa', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: emailTentandoLogar, codigo: codigo })
+        });
+
+        const data = await res.json();
+        
+        if (res.ok) {
+            alert("Login realizado com sucesso!");
+            localStorage.setItem("token", data.token);
+
+            // Redirecionamento baseado no tipo de usuário
+            if (data.role === 'admin') {
+                window.location.href = 'adm.html';
+            } else {
+                window.location.href = 'user-profile.html';
+            }
+        } else {
+            alert(data.erro || "Código incorreto ou expirado.");
+        }
+    } catch (error) {
+        alert("Erro ao verificar o código de segurança.");
     }
 }
 

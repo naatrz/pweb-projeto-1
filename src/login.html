@@ -10,10 +10,19 @@
     <body>
         <div class="login-container">
             <h2>Login</h2>
-            <input type="text" id="login-email" placeholder="E-mail">
-            <input type="password" id="senha" placeholder="Senha">
 
-            <button onclick="login()">Entrar</button>
+            <div id="step-1">
+                <input type="text" id="login-email" placeholder="E-mail">
+                <input type="password" id="senha" placeholder="Senha">
+                <button onclick="iniciarLogin()">Continuar</button>
+            </div>
+
+            <div id="step-2" style="display: none;">
+                <p>Enviamos um código de 6 dígitos para o seu e-mail.</p>
+                <input type="text" id="codigo-2fa" placeholder="Digite o código" maxlength="6">
+                <button onclick="confirmarLogin()">Entrar</button>
+            </div>
+
             <button id="btn-back" onclick="window.location.href='main-page.html'">Voltar</button>
         </div>
         <script src="script.js"></script>
