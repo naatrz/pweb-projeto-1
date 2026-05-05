@@ -52,7 +52,8 @@ const UserSchema = new mongoose.Schema({
     phone: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String },
-    fotoUrl: { type: String }
+    fotoUrl: { type: String },
+    role: { type: String, default: 'user' }
 });
 
 const User = mongoose.model('User', UserSchema);
@@ -70,7 +71,7 @@ const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'pweb_usuarios', // Nome da pasta que será criada na nuvem
-        allowed_formats: ['jpg', 'png', 'jpeg']
+        allowedFormats: ['jpg', 'png', 'jpeg']
     }
 });
 
@@ -109,6 +110,7 @@ app.get('/login.html', (req, res) => res.sendFile(__dirname + '/login.html'));
 app.get('/main-page.html', (req, res) => res.sendFile(__dirname + '/main-page.html'));
 app.get('/sign-up.html', (req, res) => res.sendFile(__dirname + '/sign-up.html'));
 app.get('/adm.html', (req, res) => res.sendFile(__dirname + '/adm.html'));
+app.get('/user-profile.html', (req, res) => res.sendFile(__dirname + '/user-profile.html'));
 app.get('/styles.css', (req, res) => res.sendFile(__dirname + '/styles.css'));
 app.get('/script.js', (req, res) => res.sendFile(__dirname + '/script.js'));
 app.get('/view.js', (req, res) => res.sendFile(__dirname + '/view.js'));
@@ -118,17 +120,16 @@ app.post('/logar', async (req, res) => {
     const { email, senha } = req.body;
     
     try {
-        // 1. Procura o usuário no banco pelo email
         const usuario = await User.findOne({ email });
         
-        // 2. Se não achar ou se a senha não bater (usando o bcrypt para comparar)
         if (!usuario || !(await bcrypt.compare(senha, usuario.password))) {
             return res.status(401).json({ erro: "Email ou senha inválidos." });
         }
         
-        // 3. Se tudo deu certo, gera o token (agora com o ID real do banco)
-        const token = jwt.sign({ usuarioId: usuario._id, email: usuario.email }, SECRET_KEY, { expiresIn: '1h' });
-        return res.json({ mensagem: "Login realizado com sucesso", token: token });
+        // Guarda o 'role' para diferenciar o tipo de usuário
+        const token = jwt.sign({ usuarioId: usuario._id, email: usuario.email, role: usuario.role }, SECRET_KEY, { expiresIn: '1h' });
+        
+        return res.json({ mensagem: "Login realizado com sucesso", token: token, role: usuario.role });
         
     } catch (error) {
         res.status(500).json({ erro: "Erro ao tentar realizar o login." });
@@ -149,7 +150,8 @@ app.post('/itens', async (req, res) => {
             birth: req.body.birth,
             phone: req.body.phone,
             email: req.body.email,
-            password: senhaCriptografada // Salva o hash no lugar da senha limpa
+            password: senhaCriptografada,
+            fotoUrl: req.body.fotoUrl // ⬅️ AQUI ESTAVA O PROBLEMA! Faltava essa linha para salvar a foto no banco!
         });
         
         await novoUser.save();
@@ -160,15 +162,22 @@ app.post('/itens', async (req, res) => {
 });
 
 // RESOLUÇÃO DO REQUISITO B (N2B): Salvar imagem em nuvem auxiliar
-app.post('/upload', upload.single('imagem'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ erro: "Nenhuma imagem foi enviada." });
-    }
-    
-    // O Multer e o Cloudinary processam o arquivo e injetam o link público em req.file.path
-    res.json({ 
-        mensagem: "Imagem salva na nuvem com sucesso!", 
-        url: req.file.path 
+app.post('/upload', (req, res) => {
+    // Colocamos o upload dentro de uma função para capturar qualquer erro
+    upload.single('imagem')(req, res, function (err) {
+        if (err) {
+            console.error("🚨 Detalhe do Erro no Upload:", err);
+            return res.status(500).json({ erro: "Falha na nuvem", detalhes: err.message });
+        }
+        
+        if (!req.file) {
+            return res.status(400).json({ erro: "Nenhuma imagem foi enviada pelo formulário." });
+        }
+        
+        res.json({ 
+            mensagem: "Imagem salva na nuvem com sucesso!", 
+            url: req.file.path 
+        });
     });
 });
 
@@ -195,15 +204,34 @@ app.use(verificaToken);
 // ROTAS PROTEGIDAS (MongoDB)
 // ==========================================
 
-// Listar itens
+// Rota EXCLUSIVA DO ADMIN: Listar todos os usuários
 app.get('/itens', async (req, res) => {
+    // Trava de segurança: Se não for admin, bloqueia!
+    if (req.usuarioLogado.role !== 'admin') {
+        return res.status(403).json({ erro: "Acesso negado. Área restrita para administradores." });
+    }
+
     try {
         const users = await User.find();
-        // Mapeia o _id do MongoDB para id para não quebrar o frontend
-        const formatados = users.map(u => ({ id: u._id, name: u.name, birth: u.birth, phone: u.phone, email: u.email }));
+        const formatados = users.map(u => ({ id: u._id, name: u.name, birth: u.birth, phone: u.phone, email: u.email, fotoUrl: u.fotoUrl }));
         res.json(formatados);
     } catch (error) {
-        res.status(500).json({ erro: "Erro ao buscar dados no banco." });
+        res.status(500).json({ erro: "Erro ao buscar dados." });
+    }
+});
+
+// Rota DO USUÁRIO: Ver o próprio perfil
+app.get('/perfil', async (req, res) => {
+    try {
+        // Usa o ID que está dentro do token para buscar só aquele usuário
+        const item = await User.findById(req.usuarioLogado.usuarioId);
+        if (item) {
+            res.json({ id: item._id, name: item.name, birth: item.birth, phone: item.phone, email: item.email, fotoUrl: item.fotoUrl });
+        } else {
+            res.status(404).json({ erro: "Perfil não encontrado" });
+        }
+    } catch (error) {
+        res.status(500).json({ erro: "Erro ao carregar perfil." });
     }
 });
 

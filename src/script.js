@@ -11,13 +11,14 @@ async function login() {
         });
 
         const data = await res.json();
+        alert("Login com sucesso!");
+        
+        localStorage.setItem("token", data.token);
 
-        if (res.ok) {
-            // Guarda o token no localStorage para usar depois
-            localStorage.setItem('token', data.token);
-            window.location.href = 'adm.html';
+        if (data.role === 'admin') {
+            window.location.href = 'adm.html'; // Vai para o painel de controle
         } else {
-            alert(data.erro || "Usuário ou senha incorretos.");
+            window.location.href = 'user-profile.html'; // Vai para a tela comum (ou perfil.html se você criar)
         }
     } catch (error) {
         console.error(error);
@@ -61,7 +62,7 @@ async function register() {
     }
 
     // Agora inclui o password no objeto que vai para a API
-    const newRegister = { name, birth, phone, email, password };
+    const newRegister = { name, birth, phone, email, password, fotoUrl };
 
     try {
         const res = await fetch('/itens', {

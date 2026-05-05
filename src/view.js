@@ -11,9 +11,60 @@ function fetchToken() {
     return token;
 }
 
+async function carregarPerfil() {
+    const token = localStorage.getItem('token') || (typeof fetchToken === 'function' ? await fetchToken() : null);
+    
+    if (!token) {
+        alert("Você precisa estar logado para ver o perfil.");
+        window.location.href = 'login.html';
+        return;
+    }
+
+    try {
+        const res = await fetch('/perfil', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+            const perfil = await res.json();
+            const divPerfil = document.getElementById('dados-perfil');
+
+            // Prepara a imagem
+            let imagemHtml = perfil.fotoUrl 
+                ? `<img src="${perfil.fotoUrl}" alt="Sua Foto" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto 15px;">` 
+                : `<p style="text-align:center; color: #888; font-style: italic;">Sem foto de perfil</p>`;
+
+            // Injeta o HTML na tela
+            divPerfil.innerHTML = `
+                ${imagemHtml}
+                <p><strong>Nome:</strong> ${perfil.name}</p>
+                <p><strong>Email:</strong> ${perfil.email}</p>
+                <p><strong>Nascimento:</strong> ${perfil.birth}</p>
+                <p><strong>Telefone:</strong> ${perfil.phone}</p>
+            `;
+        } else {
+            alert("Sessão expirada ou acesso negado. Faça login novamente.");
+            window.location.href = 'login.html';
+        }
+    } catch (error) {
+        console.error("Erro ao carregar perfil:", error);
+        document.getElementById('dados-perfil').innerHTML = "<p style='color: red;'>Erro ao comunicar com o servidor.</p>";
+    }
+}
+
+function sair() {
+    // Apaga o token do navegador e manda de volta pro login
+    localStorage.removeItem('token'); 
+    window.location.href = 'login.html';
+}
+
 // Busca e exibe os registros da API
 async function showRegisters() {
     const listContainer = document.getElementById("registers-list");
+
+    if (!listContainer) return;
+
     listContainer.innerHTML = "<p>Carregando cadastros do servidor...</p>";
 
     try {
@@ -161,4 +212,15 @@ async function downloadPDF() {
     }
 }
 
-window.onload = showRegisters;
+// O ouvinte inteligente que decide o que carregar
+document.addEventListener("DOMContentLoaded", () => {
+    // Se achou a lista de registros, estamos na tela do Admin
+    if (document.getElementById("registers-list")) {
+        showRegisters();
+    }
+    
+    // Se achou a div de perfil, estamos na tela do Usuário Comum
+    if (document.getElementById("dados-perfil")) {
+        carregarPerfil();
+    }
+});
