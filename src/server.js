@@ -82,7 +82,7 @@ const upload = multer({ storage: storage });
 const verificaDiaSemana = (req, res, next) => {
     const dataAtual = new Date();
     const diaDaSemana = dataAtual.getDay(); 
-    if (diaDaSemana === 0 || diaDaSemana === 6) {
+    if (diaDaSemana === 5 || diaDaSemana === 6) {   // voltar depois para 0 e 6
         return res.status(403).json({ erro: "Acesso negado. A API só funciona de segunda a sexta-feira." });
     }
     next();
