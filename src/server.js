@@ -378,6 +378,31 @@ app.get('/relatorio/pdf', async (req, res) => {
     }
 });
 
+// ==========================================
+// RESOLUÇÃO DO REQUISITO A (N2): Exportar CSV
+// ==========================================
+app.get('/relatorio/csv', async (req, res) => {
+    try {
+        const users = await User.find();
+
+        // 1. Gera o cabeçalho do arquivo CSV
+        let csv = 'ID,Nome,Nascimento,Telefone,Email,Cargo\n';
+
+        // 2. Preenche com os dados dos usuários
+        users.forEach(u => {
+            // As aspas duplas protegem os dados caso alguém coloque uma vírgula no nome
+            csv += `"${u._id}","${u.name}","${u.birth}","${u.phone}","${u.email}","${u.role}"\n`;
+        });
+
+        // 3. Avisa ao navegador o arquivo é para download
+        res.header('Content-Type', 'text/csv; charset=utf-8');
+        res.header('Content-Disposition', 'attachment; filename=usuarios.csv');
+        res.send(csv);
+    } catch (error) {
+        res.status(500).json({ erro: "Erro ao gerar arquivo CSV." });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
 

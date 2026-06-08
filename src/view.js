@@ -215,7 +215,39 @@ async function downloadPDF() {
     }
 }
 
-// O ouvinte inteligente que decide o que carregar
+// ==========================================
+// RESOLUÇÃO DO REQUISITO A (N2): Exportar CSV
+// ==========================================
+async function exportarCSV() {
+    try {
+        const token = await fetchToken();
+        const res = await fetch('/relatorio/csv', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+            throw new Error("Falha ao buscar o CSV");
+        }
+
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'usuarios.csv'; 
+        
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao tentar gerar e baixar o relatório em CSV.");
+    }
+}
+
+// Separa a tela de usuário comum e de adm
 document.addEventListener("DOMContentLoaded", () => {
     // Se achou a lista de registros, estamos na tela do Admin
     if (document.getElementById("registers-list")) {

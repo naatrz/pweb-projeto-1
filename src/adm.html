@@ -11,8 +11,11 @@
         <div class="adm-container">
             <h2>Usuários cadastrados</h2>
 
-            <button onclick="downloadPDF()" style="background-color: #2ea043; margin-bottom: 20px;">Baixar Relatório em PDF</button>
-
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button onclick="downloadPDF()" style="background-color: #2ea043;">Baixar Relatório em PDF</button>
+                <button onclick="exportarCSV()" style="background-color: #007bff;">Exportar CSV</button>
+            </div>
+            
             <div id="registers-list"></div>
             <button id="btn-back" onclick="window.location.href='main-page.html'">Voltar</button>
          </div>
