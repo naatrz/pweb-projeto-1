@@ -11,6 +11,9 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const nodemailer = require('nodemailer');
+const cron = require('node-cron');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 
@@ -400,6 +403,46 @@ app.get('/relatorio/csv', async (req, res) => {
         res.send(csv);
     } catch (error) {
         res.status(500).json({ erro: "Erro ao gerar arquivo CSV." });
+    }
+});
+
+// ==========================================
+// RESOLUÇÃO DO REQUISITO B (N2): Backup Automático às 17h
+// ==========================================
+
+// 1. Garante que a pasta "backups" exista
+const backupDir = path.join(__dirname, 'backups');
+if (!fs.existsSync(backupDir)) {
+    fs.mkdirSync(backupDir);
+}
+
+// 2. Agenda a tarefa
+// Sintxe do cron (da esquerda para direita): minuto, hora, dia, mês, dia da semana de 0 a 7 (onde 0 e 7 são domingo)
+// OBS: o significado da configuração de horário é: ('0 17 * * *'  minuto 0, hora 17, todos os dias)
+// Para rodar a cada minuto, é só deixar um * em tudo
+cron.schedule('40 20 * * *', async () => {
+    console.log("Iniciando backup diário automático (20:40)...");
+    
+    try {
+        const users = await User.find();
+        
+        // Mesma lógica do CSV
+        let csv = 'ID,Nome,Nascimento,Telefone,Email,Cargo\n';
+        users.forEach(u => {
+            csv += `"${u._id}","${u.name}","${u.birth}","${u.phone}","${u.email}","${u.role}"\n`;
+        });
+
+        // Cria um nome de arquivo com a data do dia
+        const dataAtual = new Date().toISOString().split('T')[0];
+        const fileName = `backup_usuarios_${dataAtual}.csv`;
+        const filePath = path.join(backupDir, fileName);
+
+        // Salva o arquivo na pasta do servidor
+        fs.writeFileSync(filePath, csv);
+        console.log(`✅ Backup salvo com sucesso em: ${filePath}`);
+        
+    } catch (error) {
+        console.error("Erro ao realizar o backup automático:", error);
     }
 });
 
