@@ -247,6 +247,38 @@ async function exportarCSV() {
     }
 }
 
+// ==========================================
+// RESOLUÇÃO DO REQUISITO C (N2): Relatório de Monitoramento em PDF
+// ==========================================
+async function baixarMonitoramento() {
+    try {
+        const token = await fetchToken();
+        const res = await fetch('/relatorio/monitoramento', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+            throw new Error("Falha ao buscar o PDF de monitoramento");
+        }
+
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'monitoramento_sistema.pdf'; 
+        
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao tentar baixar o relatório de monitoramento.");
+    }
+}
+
 // Separa a tela de usuário comum e de adm
 document.addEventListener("DOMContentLoaded", () => {
     // Se achou a lista de registros, estamos na tela do Admin

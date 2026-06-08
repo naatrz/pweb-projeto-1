@@ -446,6 +446,76 @@ cron.schedule('40 20 * * *', async () => {
     }
 });
 
+// ==========================================
+// RESOLUÇÃO DO REQUISITO C (N2): Relatório de Monitoramento em PDF
+// ==========================================
+app.get('/relatorio/monitoramento', async (req, res) => {
+    // Trava de segurança: apenas um adm pode gerar esse relatório
+    if (req.usuarioLogado.role !== 'admin') {
+        return res.status(403).json({ erro: "Acesso negado." });
+    }
+
+    try {
+        const doc = new PDFDocument();
+        res.setHeader('Content-disposition', 'attachment; filename=monitoramento.pdf');
+        res.setHeader('Content-type', 'application/pdf');
+        doc.pipe(res);
+
+        // 1. Pega o mês atual no formato "YYYY-MM"
+        const dataAtual = new Date();
+        const mesAtual = dataAtual.toISOString().slice(0, 7); 
+
+        // 2. Filtra apenas os logs do mês atual
+        const logsDoMes = registrosAcesso.filter(log => log.data.startsWith(mesAtual));
+
+        // 3. Conta acessos por rota e por horário
+        const contagemRotas = {};
+        const contagemHoras = {};
+
+        logsDoMes.forEach(log => {
+            // Conta as rotas
+            contagemRotas[log.rota] = (contagemRotas[log.rota] || 0) + 1;
+            
+            // Pega apenas a hora e conta
+            const hora = log.horario.split(':')[0]; 
+            contagemHoras[hora] = (contagemHoras[hora] || 0) + 1;
+        });
+
+        // 4. Calcula o horário de pico
+        let horaPico = "N/A";
+        let maxAcessos = 0;
+        for (const [hora, acessos] of Object.entries(contagemHoras)) {
+            if (acessos > maxAcessos) {
+                maxAcessos = acessos;
+                horaPico = `${hora}:00 - ${hora}:59`;
+            }
+        }
+
+        // 5. Desenha as informações no PDF
+        doc.fontSize(20).text(`Relatório de Monitoramento - ${mesAtual}`, { align: 'center' });
+        doc.moveDown();
+
+        doc.fontSize(14).text(`Horário de Pico de Uso: ${horaPico} (${maxAcessos} acessos)`);
+        doc.moveDown();
+
+        doc.fontSize(14).text('Acessos por Rota:');
+        doc.fontSize(12);
+        
+        if (Object.keys(contagemRotas).length === 0) {
+            doc.text('Nenhum acesso registrado neste mês ainda.');
+        } else {
+            for (const [rota, qtd] of Object.entries(contagemRotas)) {
+                doc.text(`- Rota ${rota}: ${qtd} vez(es)`);
+            }
+        }
+
+        doc.end();
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ erro: "Erro ao gerar PDF de monitoramento." });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
 
