@@ -535,17 +535,32 @@ io.on('connection', (socket) => {
     });
 });
 
-let ledLigado = false;
+// INDICAÇÃO DE STATUS DO LED ONLINE/OFFLINE (REQUISITO E N2)
+let usuariosOnline = 0;
 
-setInterval(() => {
+io.on('connection', (socket) => {
 
-    ledLigado = !ledLigado;
+    usuariosOnline++;
+
+    console.log(`Cliente conectado. Online: ${usuariosOnline}`);
 
     io.emit('led', {
-        status: ledLigado
+        status: usuariosOnline > 0
     });
 
-}, 3000);
+    socket.on('disconnect', () => {
+
+        usuariosOnline--;
+
+        console.log(`Cliente desconectado. Online: ${usuariosOnline}`);
+
+        io.emit('led', {
+            status: usuariosOnline > 0
+        });
+
+    });
+
+});
 
 const PORT = process.env.PORT || 3000;
 

@@ -296,17 +296,20 @@ document.addEventListener("DOMContentLoaded", () => {
 // REQUISITO E e F - Socket + LED Virtual
 // ==========================================
 
-const socket = io(); // Conecta ao servidor Socket.IO
-socket.on('led', (dados)=>{
+const socket = io();
+
+socket.on('led', (dados) => {
+
     const led = document.getElementById('led');
-    if(!led)return;
-    if (dados.status){
-        led.style.backgroundColor = 'lime';
-        led.style.boxShadow.color = 'green';
-        led.innerHTML = 'LIGADO';
+
+    if (!led) return;
+
+    if (dados.status) {
+        led.style.backgroundColor = 'green';
+        led.innerHTML = 'ONLINE';
     } else {
-         led.style.backgroundColor = 'gray';
-        led.style.boxShadow.color = 'white';
-        led.innerHTML = 'LIGADO';
+        led.style.backgroundColor = 'gray';
+        led.innerHTML = 'OFFLINE';
     }
+
 });
