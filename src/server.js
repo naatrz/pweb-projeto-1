@@ -248,6 +248,46 @@ app.post('/upload', (req, res) => {
     });
 });
 
+// ==========================================
+// RESOLUÇÃO DO REQUISITO D (N2): Stream de Vídeo
+// ==========================================
+app.get('/stream', (req, res) => {
+    // Procura o arquivo video.mp4 na pasta raiz
+    const videoPath = path.join(__dirname, 'video.mp4');
+
+    if (!fs.existsSync(videoPath)) {
+        return res.status(404).send("Vídeo não encontrado.");
+    }
+
+    const stat = fs.statSync(videoPath);
+    const fileSize = stat.size;
+    const range = req.headers.range; 
+
+    if (range) {
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const chunksize = (end - start) + 1;
+        
+        const file = fs.createReadStream(videoPath, { start, end });
+        const head = {
+            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': chunksize,
+            'Content-Type': 'video/mp4',
+        };
+        
+        res.writeHead(206, head);
+        file.pipe(res);
+    } else {
+        const head = {
+            'Content-Length': fileSize,
+            'Content-Type': 'video/mp4',
+        };
+        res.writeHead(200, head);
+        fs.createReadStream(videoPath).pipe(res);
+    }
+});
 
 // ==========================================
 // MIDDLEWARE DE PROTEÇÃO (Token)
@@ -441,7 +481,7 @@ cron.schedule('40 20 * * *', async () => {
 
         // Salva o arquivo na pasta do servidor
         fs.writeFileSync(filePath, csv);
-        console.log(`✅ Backup salvo com sucesso em: ${filePath}`);
+        console.log(`Backup salvo com sucesso em: ${filePath}`);
         
     } catch (error) {
         console.error("Erro ao realizar o backup automático:", error);
@@ -518,6 +558,9 @@ app.get('/relatorio/monitoramento', async (req, res) => {
     }
 });
 
+// ==========================================
+// RESOLUÇÃO DO REQUISITO E e F (N2): Ter algum socket e Mostrar dados em tempo real de algum sensor (real ou virtual)
+// ==========================================
 //ALTERAÇÃO PARA ADICIONAR O REQUISITO DE SOCKET (N2 REQUISITO E)
 const httpServer = http.createServer(app);
 
