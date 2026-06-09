@@ -291,25 +291,3 @@ document.addEventListener("DOMContentLoaded", () => {
         carregarPerfil();
     }
 });
-
-// ==========================================
-// REQUISITO E e F - Socket + LED Virtual
-// ==========================================
-
-const socket = io();
-
-socket.on('led', (dados) => {
-
-    const led = document.getElementById('led');
-
-    if (!led) return;
-
-    if (dados.status) {
-        led.style.backgroundColor = 'green';
-        led.innerHTML = 'ONLINE';
-    } else {
-        led.style.backgroundColor = 'gray';
-        led.innerHTML = 'OFFLINE';
-    }
-
-});

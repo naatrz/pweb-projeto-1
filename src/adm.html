@@ -10,22 +10,6 @@
     <body>
         <div class="adm-container">
             <h2>Usuários cadastrados</h2>
-            <h3>Monitoramento em Tempo Real LED</h3>
-            <div id="led"
-                style ="
-                width:120px;
-                height:120px;
-                border-radius:50%;
-                background-color:gray;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                color:white;
-                font-weight:bold;
-                margin-bottom:20px;
-            ">
-            OFFLINE
-            </div>
 
             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                 <button onclick="downloadPDF()" style="background-color: #2ea043;">Baixar Relatório em PDF</button>
@@ -43,6 +27,47 @@
             </video>
             <p style="margin: 5px 0 0 0; font-size: 14px; font-weight: bold; color: #ff69b4; font-family: sans-serif;">feito com 💗</p>
         </div>
+
+        <script src="/socket.io/socket.io.js"></script>
+
+        <div style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: rgba(255, 255, 255, 0.9); padding: 10px 15px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; font-family: sans-serif; backdrop-filter: blur(5px);">
+            <span style="font-size: 14px; font-weight: bold; color: #333;">Servidor:</span>
+            <div id="led-virtual" style="width: 15px; height: 15px; border-radius: 50%; background-color: gray; transition: 0.3s;"></div>
+            <span id="led-texto" style="font-size: 12px; font-weight: bold; color: gray;">OFFLINE</span>
+        </div>
+
+        <script>
+            // Conecta ao servidor Socket
+            const socketLED = io();
+            
+            // Escuta o evento 'led' enviado pelo server.js
+            socketLED.on('led', (dados) => {
+                const bolinha = document.getElementById('led-virtual');
+                const texto = document.getElementById('led-texto');
+                
+                if (dados.status) {
+                    bolinha.style.backgroundColor = '#2ea043'; // Fica verde
+                    bolinha.style.boxShadow = '0 0 10px #2ea043'; // Efeito de brilho
+                    texto.style.color = '#2ea043';
+                    texto.innerText = 'ONLINE';
+                } else {
+                    bolinha.style.backgroundColor = 'gray'; // Apaga
+                    bolinha.style.boxShadow = 'none';
+                    texto.style.color = 'gray';
+                    texto.innerText = 'OFFLINE';
+                }
+
+            // Se o servidor cair ou a internet desconectar, apaga o LED na hora!
+            socketLED.on('disconnect', () => {
+                const bolinha = document.getElementById('led-virtual');
+                const texto = document.getElementById('led-texto');
+                bolinha.style.backgroundColor = 'gray';
+                bolinha.style.boxShadow = 'none';
+                texto.style.color = 'gray';
+                texto.innerText = 'OFFLINE';
+            });
+            });
+        </script>
         
          <script src="view.js"></script>
     </body>
