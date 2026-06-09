@@ -14,6 +14,8 @@ const nodemailer = require('nodemailer');
 const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
 
@@ -516,7 +518,39 @@ app.get('/relatorio/monitoramento', async (req, res) => {
     }
 });
 
+//ALTERAÇÃO PARA ADICIONAR O REQUISITO DE SOCKET (N2 REQUISITO E)
+const httpServer = http.createServer(app);
+
+const io = new Server(httpServer, {
+    cors: {
+        origin: "*"
+    }
+});
+
+io.on('connection', (socket) => {
+    console.log('Cliente conectado ao socket');
+
+    socket.on('disconnect', () => {
+        console.log('Cliente desconectado');
+    });
+});
+
+let ledLigado = false;
+
+setInterval(() => {
+
+    ledLigado = !ledLigado;
+
+    io.emit('led', {
+        status: ledLigado
+    });
+
+}, 3000);
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+
+httpServer.listen(PORT, () =>
+    console.log(`Servidor rodando na porta ${PORT}`)
+);
 
 module.exports = app;
